@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Maps Test</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        #testMap { width: 100%; height: 500px; border: 2px solid #333; border-radius: 10px; margin: 20px 0; }
+        .status { padding: 15px; border-radius: 8px; margin: 10px 0; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .container { max-width: 800px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Google Maps Test</h1>
+        
+        <div id="status1" class="status info">⏳ Checking API key...</div>
+        <div id="status2" class="status info">⏳ Waiting for Google Maps API...</div>
+        <div id="status3" class="status info">⏳ Initializing map...</div>
+        
+        <div id="testMap"></div>
+        
+        <div id="status4" class="status info">⏳ Waiting for map interaction...</div>
+        
+        <h3>Test Instructions:</h3>
+        <ol>
+            <li>Check if the map is visible above</li>
+            <li>Try zooming in/out</li>
+            <li>Try panning the map</li>
+            <li>Check browser console (F12) for any errors</li>
+        </ol>
+    </div>
+
+    <script>
+        function updateStatus(id, message, type = 'info') {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = message;
+                el.className = 'status ' + type;
+            }
+        }
+
+        // Check API key
+        const apiKeyElement = document.querySelector('script[src*="maps.googleapis"]');
+        if (apiKeyElement && apiKeyElement.src.includes('key=')) {
+            const keyMatch = apiKeyElement.src.match(/key=([^&]+)/);
+            const key = keyMatch ? keyMatch[1] : 'NOT FOUND';
+            updateStatus('status1', '✅ API Key detected: ' + key.substring(0, 20) + '...', 'success');
+        } else {
+            updateStatus('status1', '❌ No API key found', 'error');
+        }
+
+        // Check Google Maps loading
+        let mapInitialized = false;
+        let attempts = 0;
+
+        function checkGoogleMaps() {
+            attempts++;
+            if (window.google && window.google.maps) {
+                updateStatus('status2', '✅ Google Maps API loaded successfully!', 'success');
+                initTestMap();
+            } else if (attempts < 30) {
+                setTimeout(checkGoogleMaps, 100);
+            } else {
+                updateStatus('status2', '❌ Google Maps API failed to load after 3 seconds', 'error');
+                updateStatus('status3', '❌ Cannot initialize map without API', 'error');
+            }
+        }
+
+        function initTestMap() {
+            try {
+                const mapElement = document.getElementById('testMap');
+                if (!mapElement) {
+                    updateStatus('status3', '❌ Map container not found', 'error');
+                    return;
+                }
+
+                const map = new google.maps.Map(mapElement, {
+                    center: { lat: 22.5726, lng: 88.3639 },
+                    zoom: 14,
+                    mapTypeControl: true,
+                    zoomControl: true,
+                    streetViewControl: true
+                });
+
+                updateStatus('status3', '✅ Map initialized successfully!', 'success');
+                updateStatus('status4', '✅ Map is ready! Try interacting with it.', 'success');
+
+                // Add a marker
+                const marker = new google.maps.Marker({
+                    position: { lat: 22.5726, lng: 88.3639 },
+                    map: map,
+                    title: 'Test Location'
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: '<div><strong>Test Marker</strong><br/>Kolkata, India</div>'
+                });
+
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+
+                infoWindow.open(map, marker);
+
+                mapInitialized = true;
+                console.log('✅ Test map loaded successfully');
+            } catch (error) {
+                updateStatus('status3', '❌ Error: ' + error.message, 'error');
+                console.error('Map initialization error:', error);
+            }
+        }
+
+        // Start checking
+        window.addEventListener('load', checkGoogleMaps);
+        setTimeout(checkGoogleMaps, 100); // Also check immediately in case we're already loaded
+    </script>
+
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBHwxvcGTe0y65riTRDc5DrK_YXKBW6YZQ&libraries=geometry,directions,places" async defer></script>
+</body>
+</html>

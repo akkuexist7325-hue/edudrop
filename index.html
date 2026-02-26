@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduDrop | The Ultimate Educational Super-App</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll-behavior: smooth; }
+        .hidden { display: none; }
+        /* Enhanced Map Container */
+        #map { 
+            height: 550px !important; 
+            width: 100% !important; 
+            border-radius: 2rem !important;
+            display: block !important;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e9ecff 50%, #f5f8ff 100%) !important;
+            position: relative;
+            overflow: hidden !important;
+            box-shadow: 0 20px 60px rgba(79, 70, 229, 0.15), 0 0 2px rgba(0, 0, 0, 0.05) !important;
+            border: 1px solid rgba(79, 70, 229, 0.1) !important;
+            transition: all 0.3s ease !important;
+            min-height: 550px !important;
+        }
+        
+        #map:hover {
+            box-shadow: 0 25px 75px rgba(79, 70, 229, 0.2), 0 0 2px rgba(0, 0, 0, 0.08) !important;
+            transform: translateY(-2px);
+        }
+        
+        /* Map Container Wrapper */
+        .map-wrapper {
+            position: relative;
+            padding: 0;
+            border-radius: 2rem;
+            display: block !important;
+            overflow: hidden;
+        }
+        
+        .map-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.02) 0%, rgba(139, 92, 246, 0.02) 100%);
+            pointer-events: none;
+            border-radius: 2rem;
+            z-index: 1;
+        }
+        
+        /* Notification Toast */
+        .notification-toast {
+            animation: slideInFromRight 0.4s ease-out;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            max-width: 400px;
+        }
+        @keyframes slideInFromRight {
+            from { transform: translateX(450px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutToRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(450px); opacity: 0; }
+        }
+        .notification-toast.hide {
+            animation: slideOutToRight 0.4s ease-out forwards;
+        }
+        
+        /* Route Stats Animation & Styling */
+        #routeStats {
+            animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(79, 70, 229, 0.3);
+            margin: 24px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        
+        #routeStats > div {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        #routeStats > div:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-4px);
+        }
+        
+        #routeStats .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        #routeStats .stat-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+        
+        @keyframes slideInUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Profile Sidebar */
+        .profile-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 300px;
+            height: 100vh;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+            overflow-y: auto;
+            padding-top: 20px;
+        }
+        
+        .profile-sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .profile-sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1999;
+        }
+        
+        .profile-sidebar-overlay.active {
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .sidebar-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            margin: 0 auto 12px;
+        }
+        
+        .sidebar-user-name {
+            font-size: 16px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        
+        .sidebar-user-email {
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        .sidebar-menu {
+            padding: 0;
+            list-style: none;
+        }
+        
+        .sidebar-menu-item {
+            border: none;
+            background: none;
+            width: 100%;
+            padding: 14px 20px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .sidebar-menu-item:hover {
+            background: #f1f5f9;
+            border-left-color: #4f46e5;
+            color: #4f46e5;
+        }
+        
+        .sidebar-menu-item i {
+            font-size: 16px;
+            width: 20px;
+        }
+        
+        .sidebar-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 8px 0;
+        }
+        
+        .hamburger-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: white;
+            margin-right: 16px;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+        }
+        
+        .hamburger-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        
+        /* Google Maps Info Window Styling */
+        .gm-ui-hover-effect { opacity: 0.7; transition: opacity 0.3s ease; }
+        .gm-style-iw-d { overflow: visible !important; }
+        
+        /* Google Maps Custom Styling */
+        .gm-style .gm-style-cc { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 6px; }
+        .gm-powered-by { opacity: 0.8; }
+        .gm-style-cc button { transition: all 0.2s ease; }
+        .gm-bundled-control { background: rgba(255, 255, 255, 0.9); border-radius: 8px; margin: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+        .gm-bundled-control button { transition: all 0.2s ease; border-radius: 4px; }
+        .gm-bundled-control button:hover { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; color: white; }
+        
+        /* Marker Info Window */
+        .gm-style-iw-d { padding: 12px; }
+        .gm-style-iw { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); }
+        .gm-style-iw:after { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); }
+        
+        /* Premium Styling */
+        .gold-boost { border: 2px solid #fbbf24 !important; background: linear-gradient(to bottom right, #ffffff, #fffdf0); }
+        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-blur: 12px; }
+        .contact-blur { filter: blur(5px); user-select: none; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        
+        /* Tutor Card Enhancements */
+        .tutor-card {
+            animation: cardFadeIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes cardFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tutor-card:nth-child(1) { animation-delay: 0.1s; }
+        .tutor-card:nth-child(2) { animation-delay: 0.2s; }
+        .tutor-card:nth-child(3) { animation-delay: 0.3s; }
+        .tutor-card:nth-child(4) { animation-delay: 0.4s; }
+        
+        .tutor-card button {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tutor-card button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: left 0.5s ease;
+        }
+        
+        .tutor-card button:hover::before {
+            left: 100%;
+        }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <nav class="glass-nav border-b px-8 py-4 flex justify-between items-center sticky top-0 z-[1000]">
+            <div class="flex items-center gap-2">
+                <button onclick="openModal('addBookModal')" class="bg-indigo-600 text-white px-3 py-2 rounded-xl">Add Book</button>
+                <button onclick="renderBooks()" class="bg-slate-100 px-3 py-2 rounded-xl">Refresh</button>
+            </div>
+            <div class="text-2xl font-black text-indigo-600 italic">EDU<span class="text-slate-800">DROP</span></div>
+            <div class="hidden md:flex gap-6 font-bold text-sm text-slate-500">
+                <button onclick="switchTab('market')" class="hover:text-indigo-600 transition" id="nav-market">Master Dhoondo</button>
+                <button onclick="openCommunityModal()" class="hover:text-indigo-600 transition" id="nav-community">Community</button>
+                <button onclick="switchTab('library')" class="hover:text-indigo-600 transition" id="nav-library">Digital Library</button>
+                <button onclick="switchTab('notes')" class="hover:text-indigo-600 transition" id="nav-notes">Notes by Master</button>
+                <button onclick="switchTab('maps')" class="hover:text-indigo-600 transition flex items-center gap-2" id="nav-maps"><i class="fa-solid fa-map"></i> Map & Location</button>
+                <!-- Admin Dashboard hidden from public -->
+                <button onclick="accessAdminPanel()" class="hover:text-indigo-600 transition hidden" id="nav-admin">Admin Dashboard</button>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="openModal('callbackModal')" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold">Support</button>
+            <button onclick="openUploadNotesModal()" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-purple-700 transition">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Upload Notes
+            </button>
+            <button onclick="openModal('regModal')" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-100">Join as Teacher</button>
+        </div>
+    </nav>
+
+    <!-- Profile Sidebar -->
+    <div class="profile-sidebar-overlay" id="sidebarOverlay" onclick="toggleProfileSidebar()"></div>
+    <aside class="profile-sidebar" id="profileSidebar">
+        <!-- Header -->
+        <div class="sidebar-header">
+            <div class="sidebar-avatar">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="sidebar-user-name">Student</div>
+            <div class="sidebar-user-email">student@edudrop.com</div>
+        </div>
+
+        <!-- Menu Items -->
+        <ul class="sidebar-menu">
+            <li><button onclick="openProfilePage(); toggleProfileSidebar();" class="sidebar-menu-item"><i class="fa-solid fa-user"></i> My Profile</button></li>
+            <li><button onclick="openBookingsPage(); toggleProfileSidebar();" class="sidebar-menu-item"><i class="fa-solid fa-calendar-check"></i> My Bookings</button></li>
+            <li><button onclick="switchTab('maps'); toggleProfileSidebar();" class="sidebar-menu-item"><i class="fa-solid fa-map"></i> My Locations</button></li>
+            <li><button onclick="openFavoritesPage(); toggleProfileSidebar();" class="sidebar-menu-item"><i class="fa-solid fa-heart"></i> Favorites</button></li>
+            <li><div class="sidebar-divider"></div></li>
+            <li><button onclick="openSettingsPage(); toggleProfileSidebar();" class="sidebar-menu-item"><i class="fa-solid fa-gear"></i> Settings</button></li>
+            <li><button onclick="openNotificationsPage(); toggleProfileSidebar();" class="sidebar-menu-item"><i class="fa-solid fa-bell"></i> Notifications</button></li>
+            <li><button onclick="openPaymentPage(); toggleProfileSidebar();" class="sidebar-menu-item"><i class="fa-solid fa-credit-card"></i> Payment Methods</button></li>
+            <li><div class="sidebar-divider"></div></li>
+            <li><button onclick="openHelpPage(); toggleProfileSidebar();" class="sidebar-menu-item"><i class="fa-solid fa-circle-question"></i> Help & Support</button></li>
+            <li><button onclick="openAboutPage(); toggleProfileSidebar();" class="sidebar-menu-item"><i class="fa-solid fa-info"></i> About Us</button></li>
+            <li><div class="sidebar-divider"></div></li>
+            <li><button onclick="logoutUser(); toggleProfileSidebar();" class="sidebar-menu-item" style="color: #ef4444;"><i class="fa-solid fa-sign-out"></i> Logout</button></li>
+        </ul>
+    </aside>
+
+    <main id="marketTab" class="p-6 max-w-[1600px] mx-auto">
+        <!-- Header Banner -->
+        <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-[2.5rem] p-8 mb-8 text-white shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 opacity-10">
+                <i class="fa-solid fa-wand-magic-sparkles text-9xl"></i>
+            </div>
+            <div class="relative z-10">
+                <h1 class="text-4xl md:text-5xl font-black mb-3 flex items-center gap-3">
+                    <i class="fa-solid fa-person-chalkboard text-amber-300 text-5xl"></i> Master Dhoondo
+                </h1>
+                <p class="text-indigo-100 text-lg">Find expert teachers in your neighborhood • Book classes • Learn from the best</p>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-6 gap-6">
+            <!-- LEFT SIDEBAR - SEARCH & FILTERS -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- PREMIUM SEARCH CARD -->
+                <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-[2rem] border-2 border-indigo-200 shadow-lg sticky top-[85px] z-10">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-indigo-600 text-white p-3 rounded-full">
+                            <i class="fa-solid fa-filter text-xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-indigo-900">Find Your Master</h3>
+                    </div>
+                    
+                    <div class="space-y-5">
+                        <!-- Subject Search with Icon -->
+                        <div>
+                            <label class="text-xs font-bold text-indigo-700 uppercase mb-2 block flex items-center gap-2">
+                                <i class="fa-solid fa-book text-indigo-600"></i> Select Subject
+                            </label>
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-indigo-400 text-lg"></i>
+                                <input type="text" id="searchSubject" placeholder="Math, Physics, Chemistry, English..." onkeyup="filterTutors()" class="w-full pl-12 p-3 bg-white border-2 border-indigo-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 font-medium">
+                            </div>
+                        </div>
+
+                        <!-- Search Button -->
+                        <button onclick="filterTutors()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-black text-base shadow-lg shadow-indigo-300 hover:shadow-xl transition transform hover:scale-105 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-search text-lg"></i> Search Masters
+                        </button>
+
+                        <!-- Results Counter -->
+                        <div class="bg-white p-4 rounded-xl border-2 border-indigo-100">
+                            <p id="searchResults" class="text-sm font-bold text-indigo-700 text-center flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-sparkles text-amber-500"></i> Ready to find your master
+                            </p>
+                        </div>
+
+                        <!-- Quick Tips -->
+                        <div class="bg-indigo-600 text-white p-4 rounded-xl text-xs space-y-2">
+                            <p class="font-bold flex items-center gap-2"><i class="fa-solid fa-lightbulb text-yellow-300"></i> Quick Tips:</p>
+                            <p>• Search by subject name</p>
+                            <p>• View teacher details</p>
+                            <p>• Book admission today</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER - TUTORS LIST -->
+            <div class="lg:col-span-4">
+                <div class="mb-6 flex items-center gap-3">
+                    <div class="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl text-white shadow-lg">
+                        <i class="fa-solid fa-star text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900">Available Masters</h2>
+                        <p class="text-xs text-slate-500 font-medium">Expert teachers near you</p>
+                    </div>
+                </div>
+                <div class="space-y-4 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar" id="tutorList">
+                    <div class="text-center py-12">
+                        <div class="text-5xl mb-3 animate-bounce">📚</div>
+                        <p class="text-slate-500 font-bold">Loading teachers...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+        <!-- ADD BOOK MODAL -->
+        <div id="addBookModal" class="fixed inset-0 z-[6000] bg-slate-900/90 backdrop-blur hidden flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 max-h-[90vh] overflow-y-auto">
+                <h3 class="text-2xl font-black mb-4">Add Book to Library</h3>
+                <div class="space-y-3">
+                    <input id="newBookTitle" placeholder="Title" class="w-full p-3 bg-slate-50 rounded-xl">
+                    <input id="newBookAuthor" placeholder="Author" class="w-full p-3 bg-slate-50 rounded-xl">
+                    <input id="newBookSubject" placeholder="Subject" class="w-full p-3 bg-slate-50 rounded-xl">
+                    <input id="newBookPages" type="number" placeholder="Pages" class="w-full p-3 bg-slate-50 rounded-xl">
+                    <input id="newBookPrice" type="number" placeholder="Price (0 for free)" class="w-full p-3 bg-slate-50 rounded-xl">
+                    <select id="newBookType" class="w-full p-3 bg-slate-50 rounded-xl">
+                        <option value="free">Free</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                    <input id="newBookCover" placeholder="Cover emoji (optional)" class="w-full p-3 bg-slate-50 rounded-xl">
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="submitNewBook()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl">Add Book</button>
+                        <button onclick="closeModal('addBookModal')" class="bg-slate-100 px-4 py-2 rounded-xl">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <main id="libraryTab" class="p-8 max-w-7xl mx-auto hidden">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-[2.5rem] p-12 mb-10 text-white shadow-2xl">
+            <h2 class="text-4xl md:text-5xl font-black mb-4 flex items-center gap-3">
+                <i class="fa-solid fa-book text-amber-300"></i> Digital Library
+            </h2>
+            <p class="text-indigo-100 text-lg">Access free and premium learning resources curated by expert educators</p>
+        </div>
+
+        <!-- Map Error Alert (shown if Google Maps fails) -->
+        <div id="mapErrorAlert" class="hidden mb-8 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 p-4 rounded-2xl flex items-start gap-4">
+            <div class="text-3xl mt-1">⚠️</div>
+            <div>
+                <p class="font-bold text-red-800">Google Maps Unavailable</p>
+                <p class="text-sm text-red-600 mt-1">The map feature is temporarily unavailable. You can still browse teachers and book admission using preview routes.</p>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="mb-10">
+            <div class="relative w-full max-w-2xl">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-indigo-400 text-xl"></i>
+                <input type="text" id="bookSearch" onkeyup="searchBooks()" placeholder="Search by title, subject, or author..." class="w-full p-4 pl-14 bg-white rounded-2xl border-2 border-indigo-100 shadow-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-lg">
+            </div>
+        </div>
+
+        <div class="mb-6 flex gap-3">
+            <button onclick="openModal('addBookModal')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl">Add Book</button>
+            <button onclick="renderBooks()" class="bg-slate-100 px-4 py-2 rounded-xl">Refresh</button>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex gap-4 mb-8 flex-wrap">
+            <button onclick="filterBooks('all')" class="px-6 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition">All Books</button>
+            <button onclick="filterBooks('free')" class="px-6 py-3 bg-green-500 text-white rounded-full font-bold shadow-lg hover:bg-green-600 transition flex items-center gap-2">
+                <i class="fa-solid fa-gift"></i> Free Resources
+            </button>
+            <button onclick="filterBooks('paid')" class="px-6 py-3 bg-amber-500 text-white rounded-full font-bold shadow-lg hover:bg-amber-600 transition flex items-center gap-2">
+                <i class="fa-solid fa-star"></i> Premium Books
+            </button>
+        </div>
+
+        <!-- Books Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="bookGrid"></div>
+    </main>
+
+    <!-- NOTES BY MASTER SECTION -->
+    <main id="notesTab" class="p-8 max-w-7xl mx-auto hidden">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-[2.5rem] p-12 mb-10 text-white shadow-2xl">
+            <h2 class="text-4xl md:text-5xl font-black mb-4 flex items-center gap-3">
+                <i class="fa-solid fa-note-sticky text-yellow-300"></i> Notes by Master
+            </h2>
+            <p class="text-purple-100 text-lg">Download handwritten notes from expert teachers • Organized by subject & teacher</p>
+        </div>
+
+        <!-- Search & Filter Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Search by Teacher -->
+            <div>
+                <label class="text-xs font-bold text-slate-600 uppercase mb-2 block">Search by Teacher Name</label>
+                <div class="relative">
+                    <i class="fa-solid fa-user absolute left-4 top-4 text-purple-400 text-lg"></i>
+                    <input type="text" id="searchTeacherNotes" placeholder="Enter teacher name..." onkeyup="filterNotes()" class="w-full pl-12 p-3 bg-white border-2 border-purple-200 rounded-xl outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100">
+                </div>
+            </div>
+
+            <!-- Search by Subject -->
+            <div>
+                <label class="text-xs font-bold text-slate-600 uppercase mb-2 block">Search by Subject</label>
+                <div class="relative">
+                    <i class="fa-solid fa-book absolute left-4 top-4 text-purple-400 text-lg"></i>
+                    <input type="text" id="searchSubjectNotes" placeholder="Math, Physics, Chemistry..." onkeyup="filterNotes()" class="w-full pl-12 p-3 bg-white border-2 border-purple-200 rounded-xl outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100">
+                </div>
+            </div>
+
+            <!-- Search Button -->
+            <div class="flex items-end">
+                <button onclick="filterNotes()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-black text-sm shadow-lg shadow-purple-300 hover:shadow-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-search"></i> Search Notes
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Tags -->
+        <div class="flex gap-2 mb-8 flex-wrap">
+            <button onclick="filterNotesBy('all')" class="px-4 py-2 bg-purple-600 text-white rounded-full font-bold text-xs hover:bg-purple-700 transition">All Notes</button>
+            <button onclick="filterNotesBy('handwritten')" class="px-4 py-2 bg-pink-500 text-white rounded-full font-bold text-xs hover:bg-pink-600 transition flex items-center gap-2">
+                <i class="fa-solid fa-pen-fancy"></i> Handwritten
+            </button>
+            <button onclick="filterNotesBy('recent')" class="px-4 py-2 bg-indigo-500 text-white rounded-full font-bold text-xs hover:bg-indigo-600 transition flex items-center gap-2">
+                <i class="fa-solid fa-clock"></i> Recently Added
+            </button>
+        </div>
+
+        <!-- Notes Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="notesGrid"></div>
+    </main>
+
+    <!-- MAP & LOCATION TAB -->
+    <main id="mapsTab" class="p-6 max-w-[1600px] mx-auto hidden">
+        <!-- Header Banner -->
+        <div class="bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 rounded-[2.5rem] p-8 mb-8 text-white shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 opacity-10">
+                <i class="fa-solid fa-location-dot text-9xl"></i>
+            </div>
+            <div class="relative z-10">
+                <h1 class="text-4xl md:text-5xl font-black mb-3 flex items-center gap-3">
+                    <i class="fa-solid fa-map text-5xl"></i> Map & Location Tracker
+                </h1>
+                <p class="text-red-100 text-lg">Track teachers in real-time • View routes • Get directions</p>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- LEFT - TEACHERS LIST -->
+            <div class="lg:col-span-1">
+                <div class="mb-6 flex items-center gap-3">
+                    <div class="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl text-white shadow-lg">
+                        <i class="fa-solid fa-list text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900">Booked Teachers</h2>
+                        <p class="text-xs text-slate-500 font-medium">Your confirmed bookings</p>
+                    </div>
+                </div>
+                <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar" id="bookedTeachersList">
+                    <div class="text-center py-8">
+                        <div class="text-4xl mb-3">🎓</div>
+                        <p class="text-slate-500 font-bold">No bookings yet</p>
+                        <p class="text-xs text-slate-400 mt-1">Book a teacher to see them here</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER & RIGHT - FULL WIDTH MAP -->
+            <div class="lg:col-span-2">
+                <div class="bg-gradient-to-b from-slate-50 to-white p-6 rounded-[2rem] shadow-2xl border border-slate-100">
+                    <div class="mb-6 flex items-center gap-3">
+                        <div class="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl text-white shadow-lg">
+                            <i class="fa-solid fa-map-location-dot text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black text-slate-900">Live Map View</h3>
+                            <p class="text-xs text-slate-500 font-medium">Interactive map with real-time tracking</p>
+                        </div>
+                    </div>
+                    <div class="map-wrapper" id="mapsPageMapWrapper">
+                        <div id="mapsPageMap" style="height: 600px; width: 100%; border-radius: 1.5rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Route Stats -->
+                <div id="mapsPageRouteStats" class="hidden mt-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 text-white p-6 rounded-2xl shadow-2xl grid grid-cols-3 gap-4 border border-indigo-400/30">
+                    <div class="text-center">
+                        <p class="text-xs text-indigo-100 font-bold uppercase tracking-wider">📍 Teacher</p>
+                        <p class="font-black text-xl text-white mt-2" id="mapsPageTeacher">--</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-indigo-100 font-bold uppercase tracking-wider">📏 Distance</p>
+                        <p class="font-black text-xl text-white mt-2" id="mapsPageDist">-- km</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-indigo-100 font-bold uppercase tracking-wider">⏱️ Time</p>
+                        <p class="font-black text-xl text-white mt-2" id="mapsPageTime">-- min</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-6 grid grid-cols-2 gap-4">
+                    <button onclick="clearMapLocation()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl text-sm font-black transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-xmark"></i> Clear Map
+                    </button>
+                    <button onclick="centerMapOnUser()" class="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-black shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-location-crosshairs"></i> Center Map
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <main id="adminTab" class="p-8 max-w-6xl mx-auto hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase">Total Revenue</p>
+                <p class="text-3xl font-black text-indigo-600">₹<span id="statTotal">0.00</span></p>
+            </div>
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase">Admission Comm (5%)</p>
+                <p class="text-3xl font-black text-green-600">₹<span id="statComm">0.00</span></p>
+            </div>
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm text-amber-600">
+                <p class="text-[10px] font-black text-slate-400 uppercase">Listing & Boosts</p>
+                <p class="text-3xl font-black">₹<span id="statList">0.00</span></p>
+            </div>
+        </div>
+        <div class="bg-slate-900 text-white rounded-[2.5rem] p-8">
+            <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-headset text-indigo-400"></i> Callback Requests</h3>
+            <div id="callbackQueue" class="space-y-3 text-sm"></div>
+        </div>
+    </main>
+
+    <div id="regModal" class="fixed inset-0 z-[5000] bg-slate-900/90 backdrop-blur hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-2xl font-black mb-6">Create Educator Profile</h3>
+            <div class="space-y-4 mb-6">
+                <!-- Full Name -->
+                <input type="text" id="regName" placeholder="Full Name" class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500">
+                
+                <!-- Phone Number -->
+                <input type="tel" id="regPhone" placeholder="Phone Number" class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500">
+                
+                <!-- Email -->
+                <input type="email" id="regEmail" placeholder="Email Address" class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500">
+                
+                <!-- Subject -->
+                <input type="text" id="regSubject" placeholder="Subject You Teach (e.g., Math, Physics)" class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500">
+                
+                <!-- Monthly Fee -->
+                <input type="number" id="regFee" placeholder="Monthly Fee (₹)" class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500">
+                
+                <!-- Account Type -->
+                <select id="regType" class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" onchange="calcRegPrice()">
+                    <option value="4">Individual Tutor (₹4)</option>
+                    <option value="29">Coaching Center (₹29)</option>
+                </select>
+                
+                <!-- Bank Details Section -->
+                <div class="bg-blue-50 border-2 border-blue-200 p-4 rounded-2xl">
+                    <p class="text-xs font-black text-blue-700 uppercase mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-bank"></i> Payment Details
+                    </p>
+                    
+                    <!-- Bank Account Number -->
+                    <input type="text" id="regBankAccount" placeholder="Bank Account Number" class="w-full p-3 bg-white border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm mb-3">
+                    
+                    <!-- Account Holder Name -->
+                    <input type="text" id="regAccountHolder" placeholder="Account Holder Name" class="w-full p-3 bg-white border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm mb-3">
+                    
+                    <!-- IFSC Code -->
+                    <input type="text" id="regIFSC" placeholder="IFSC Code" class="w-full p-3 bg-white border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm mb-3">
+                    
+                    <!-- QR Code Upload -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 mb-2 block">Payment QR Code (Optional)</label>
+                        <div class="flex gap-2">
+                            <input type="file" id="regQRCode" accept="image/*" class="flex-1 p-3 bg-white border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-xs">
+                            <button type="button" onclick="showQRPreview()" class="bg-blue-500 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-blue-600 transition">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-1">Upload UPI QR, PayTM QR, or Google Pay QR</p>
+                    </div>
+                </div>
+                
+                <!-- Gold Boost -->
+                <label class="flex items-center gap-3 p-4 border rounded-2xl cursor-pointer hover:bg-amber-50 transition">
+                    <input type="checkbox" id="regBoost" onchange="calcRegPrice()" class="w-5 h-5 accent-amber-500">
+                    <span class="text-sm font-bold text-amber-600">Gold Visibility Boost (+₹50)</span>
+                </label>
+            </div>
+            <button onclick="processTeacherReg()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition">Pay ₹<span id="regTotal">4</span> & Go Live</button>
+            <button onclick="closeModal('regModal')" class="w-full mt-4 text-slate-400 text-xs font-bold uppercase">Cancel</button>
+        </div>
+    </div>
+
+    <div id="callbackModal" class="fixed inset-0 z-[5000] bg-slate-900/90 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-10 text-center">
+            <h3 class="text-xl font-black mb-2">Request Assistance</h3>
+            <p class="text-slate-500 text-xs mb-8">AI Chatbot or Customer Care will call you back.</p>
+            <input type="text" id="cbName" placeholder="Your Name" class="w-full p-4 bg-slate-50 rounded-2xl mb-3 outline-none">
+            <input type="tel" id="cbPhone" placeholder="Mobile Number" class="w-full p-4 bg-slate-50 rounded-2xl mb-6 outline-none">
+            <button onclick="submitCallback()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Get Call Back</button>
+        </div>
+    </div>
+
+    <!-- PAYMENT MODAL -->
+    <div id="paymentModal" class="fixed inset-0 z-[5000] bg-slate-900/90 backdrop-blur hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
+            <h3 class="text-3xl font-black mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-credit-card text-indigo-600"></i> Secure Payment
+            </h3>
+            <p class="text-slate-500 mb-6">Complete your booking with a secure payment</p>
+
+            <!-- Payment Details -->
+            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-2xl mb-6 border-2 border-indigo-200">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-sm text-slate-500 font-bold">Teacher</p>
+                        <p class="text-2xl font-black text-slate-900" id="payTeacherName">Dr. John Doe</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-slate-500 font-bold">Monthly Fee</p>
+                        <p class="text-3xl font-black text-indigo-600">₹<span id="payAmount">0</span></p>
+                    </div>
+                </div>
+                <div class="border-t-2 border-indigo-200 pt-4">
+                    <p class="text-xs text-slate-500 uppercase font-bold mb-2">Subject</p>
+                    <p class="font-bold text-slate-900" id="paySubject">Mathematics</p>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <p class="text-sm font-bold text-slate-600 mb-4">Choose Payment Method:</p>
+            <div class="space-y-3 mb-6">
+                <label class="flex items-center gap-4 p-4 border-2 border-indigo-200 rounded-xl cursor-pointer hover:bg-indigo-50 transition">
+                    <input type="radio" name="paymentMethod" value="card" checked class="w-5 h-5 accent-indigo-600">
+                    <div class="flex-1">
+                        <p class="font-bold text-slate-900">Credit/Debit Card</p>
+                        <p class="text-xs text-slate-500">Visa, Mastercard, Rupay</p>
+                    </div>
+                    <i class="fa-solid fa-credit-card text-indigo-600 text-xl"></i>
+                </label>
+
+                <label class="flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
+                    <input type="radio" name="paymentMethod" value="upi" class="w-5 h-5 accent-indigo-600">
+                    <div class="flex-1">
+                        <p class="font-bold text-slate-900">UPI</p>
+                        <p class="text-xs text-slate-500">Google Pay, PhonePe, Paytm</p>
+                    </div>
+                    <i class="fa-solid fa-mobile text-green-600 text-xl"></i>
+                </label>
+
+                <label class="flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
+                    <input type="radio" name="paymentMethod" value="wallet" class="w-5 h-5 accent-indigo-600">
+                    <div class="flex-1">
+                        <p class="font-bold text-slate-900">Digital Wallet</p>
+                        <p class="text-xs text-slate-500">PayPal, Skrill, Wise</p>
+                    </div>
+                    <i class="fa-solid fa-wallet text-purple-600 text-xl"></i>
+                </label>
+            </div>
+            
+            <!-- Teacher QR Pay (shown when teacher uploaded QR) -->
+            <div id="teacherQRSection" class="hidden mb-6">
+                <p class="text-sm font-bold text-slate-600 mb-2">Pay by scanning teacher's QR:</p>
+                <div class="flex gap-3 items-center">
+                    <div id="teacherQRPreview" class="w-32 h-32 bg-slate-100 rounded-xl flex items-center justify-center overflow-hidden border border-slate-200"></div>
+                    <div class="flex-1">
+                        <p class="text-xs text-slate-500 mb-2">Use your webcam to scan the teacher's QR or ask the teacher to show this QR on their phone.</p>
+                        <div class="flex gap-2">
+                            <button id="openQRScannerBtn" type="button" onclick="openQRScanner()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-sm">Scan with Camera</button>
+                            <button id="stopQRScannerBtn" type="button" onclick="stopQRScanner()" class="bg-red-500 text-white px-4 py-2 rounded-xl text-sm hidden">Stop Scanner</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="qrScannerArea" class="hidden mt-4">
+                    <video id="qrVideo" class="w-full rounded-xl" autoplay muted playsinline></video>
+                    <canvas id="qrCanvas" class="hidden"></canvas>
+                    <p id="qrResult" class="text-sm font-bold mt-2"></p>
+                </div>
+            </div>
+
+            <!-- Payment Terms -->
+            <label class="flex items-center gap-3 p-3 mb-6 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer">
+                <input type="checkbox" id="agreeTerms" class="w-4 h-4 accent-indigo-600">
+                <span class="text-xs text-slate-700">I agree to the <a href="#" class="text-indigo-600 font-bold">terms and conditions</a> and <a href="#" class="text-indigo-600 font-bold">refund policy</a></span>
+            </label>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3">
+                <button onclick="closeModal('paymentModal')" class="flex-1 bg-slate-100 text-slate-700 py-4 rounded-2xl font-bold hover:bg-slate-200 transition">Cancel</button>
+                <button id="confirmPayBtn" onclick="processPayment(event)" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:shadow-xl transition">
+                    <i class="fa-solid fa-lock mr-2"></i> Pay ₹<span id="payTotal">0</span>
+                </button>
+            </div>
+
+            <!-- Security Badge -->
+            <div class="text-center mt-6 pt-4 border-t border-slate-200">
+                <p class="text-xs text-slate-500 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-green-600"></i> 256-bit SSL Encrypted • PCI-DSS Compliant
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPLOAD NOTES MODAL (Teacher Only) -->
+    <div id="uploadNotesModal" class="fixed inset-0 z-[5000] bg-slate-900/90 backdrop-blur hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center gap-3 mb-2">
+                <i class="fa-solid fa-cloud-arrow-up text-purple-600 text-3xl"></i>
+                <h3 class="text-3xl font-black">Upload Your Notes</h3>
+            </div>
+            <p class="text-slate-500 mb-8">Share your handwritten notes with students • Earn extra income</p>
+
+            <div class="space-y-6 mb-8">
+                <!-- Teacher Verification -->
+                <div class="bg-blue-50 border-2 border-blue-200 p-4 rounded-2xl">
+                    <p class="text-xs font-bold text-blue-700 uppercase mb-3">👨‍🏫 Teacher Verification</p>
+                    <label class="flex items-center gap-3 p-3 border border-blue-200 rounded-xl cursor-pointer hover:bg-blue-100 transition">
+                        <input type="radio" name="teacherVerify" value="registered" checked class="w-4 h-4 accent-blue-600">
+                        <span class="text-sm font-bold">I'm a registered teacher on EduDrop</span>
+                    </label>
+                    <div class="mt-2">
+                        <label class="text-xs font-bold text-slate-600 mb-2 block">Your Teacher Email</label>
+                        <input type="email" id="uploadTeacherEmail" placeholder="Same email as registration" class="w-full p-3 bg-white border-2 border-blue-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    </div>
+                </div>
+
+                <!-- Note Details -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 uppercase mb-2 block">📝 Note Title</label>
+                        <input type="text" id="uploadNoteTitle" placeholder="e.g., Calculus - Derivatives" class="w-full p-3 bg-slate-50 border-2 border-purple-200 rounded-xl outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-slate-600 uppercase mb-2 block">📚 Subject</label>
+                            <select id="uploadSubject" class="w-full p-3 bg-slate-50 border-2 border-purple-200 rounded-xl outline-none focus:border-purple-500">
+                                <option value="">Select Subject</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Chemistry">Chemistry</option>
+                                <option value="Biology">Biology</option>
+                                <option value="English">English</option>
+                                <option value="History">History</option>
+                                <option value="Science">Science</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-slate-600 uppercase mb-2 block">📄 Number of Pages</label>
+                            <input type="number" id="uploadPages" placeholder="e.g., 15" min="1" class="w-full p-3 bg-slate-50 border-2 border-purple-200 rounded-xl outline-none focus:border-purple-500">
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 uppercase mb-2 block">🏷️ Tags (comma separated)</label>
+                        <input type="text" id="uploadTags" placeholder="e.g., Calculus, Derivatives, Important" class="w-full p-3 bg-slate-50 border-2 border-purple-200 rounded-xl outline-none focus:border-purple-500">
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 uppercase mb-2 block">💬 Description</label>
+                        <textarea id="uploadDescription" placeholder="Brief description of your notes..." rows="3" class="w-full p-3 bg-slate-50 border-2 border-purple-200 rounded-xl outline-none focus:border-purple-500 resize-none"></textarea>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 uppercase mb-2 block">📎 Upload Note File (PDF/Image)</label>
+                        <div class="border-2 border-dashed border-purple-300 rounded-2xl p-6 text-center cursor-pointer hover:bg-purple-50 transition" id="uploadArea">
+                            <i class="fa-solid fa-cloud-arrow-up text-purple-500 text-4xl mb-3 block"></i>
+                            <p class="font-bold text-slate-700 mb-1">Drop your file here or click to upload</p>
+                            <p class="text-xs text-slate-500">PDF, JPG, PNG (Max 10MB)</p>
+                            <input type="file" id="uploadNoteFile" accept=".pdf,.jpg,.jpeg,.png" class="hidden">
+                        </div>
+                        <p id="uploadFileName" class="text-xs text-slate-500 mt-2"></p>
+                    </div>
+
+                    <!-- Price for Premium Notes -->
+                    <div class="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fa-solid fa-star text-amber-500"></i>
+                            <p class="text-xs font-bold text-amber-700 uppercase">Premium Option</p>
+                        </div>
+                        <label class="flex items-center gap-3 p-3 border border-amber-200 rounded-xl cursor-pointer hover:bg-amber-100 transition">
+                            <input type="checkbox" id="uploadPremium" class="w-4 h-4 accent-amber-600">
+                            <span class="text-sm font-bold">Make this a paid premium note (+₹99)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Terms -->
+                <label class="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl cursor-pointer">
+                    <input type="checkbox" id="uploadAgree" class="w-4 h-4 accent-green-600">
+                    <span class="text-xs font-bold text-green-700">I confirm these are my original notes and I have the right to share them</span>
+                </label>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3">
+                <button onclick="closeModal('uploadNotesModal')" class="flex-1 bg-slate-100 text-slate-700 py-4 rounded-2xl font-bold hover:bg-slate-200 transition">Cancel</button>
+                <button onclick="submitNoteUpload()" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-purple-200 hover:shadow-xl transition">
+                    <i class="fa-solid fa-upload mr-2"></i> Upload Notes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHATBOT AI -->
+    <div id="chatbot" class="fixed bottom-8 right-8 w-96 bg-white rounded-[2rem] shadow-2xl border-2 border-indigo-200 z-[999] hidden flex-col overflow-hidden">
+        <!-- Chat Header -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-5 flex justify-between items-center cursor-pointer" onclick="toggleChatbot()">
+            <div class="flex items-center gap-3">
+                <div class="bg-white text-indigo-600 w-10 h-10 rounded-full flex items-center justify-center font-black text-lg">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div>
+                    <p class="font-black text-lg">EduBot AI</p>
+                    <p class="text-xs text-indigo-100">Online • Always ready to help</p>
+                </div>
+            </div>
+            <button class="text-white hover:text-indigo-200 transition">
+                <i class="fa-solid fa-chevron-down text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div id="chatMessages" class="flex-1 p-4 space-y-3 overflow-y-auto bg-slate-50 h-96">
+            <div class="flex gap-2 items-end">
+                <div class="bg-indigo-100 p-3 rounded-2xl rounded-bl-none max-w-xs">
+                    <p class="text-sm text-slate-800">👋 Hi! I'm EduBot. I can help you find teachers, explore courses, or answer questions about EduDrop. What can I help you with?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="border-t border-slate-200 p-4 bg-white flex gap-2 items-center">
+            <input type="text" id="chatInput" placeholder="Type your question..." class="flex-1 p-3 bg-slate-50 border-2 border-indigo-200 rounded-full outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" onkeypress="handleChatKeypress(event)">
+            <!-- Microphone for voice input -->
+            <button id="micButton" onclick="toggleVoiceRecognition()" class="bg-green-500 text-white p-3 rounded-full hover:bg-green-600 transition shadow-lg flex items-center justify-center" title="Speak">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+            <button onclick="sendChatMessage()" class="bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-700 transition shadow-lg flex items-center justify-center" title="Send text message">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Chatbot Toggle Button -->
+    <button onclick="toggleChatbot()" class="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl hover:scale-110 transition transform z-[998]" id="chatbotToggle">
+        <i class="fa-solid fa-comments"></i>
+    </button>
+
+    <!-- COMMUNITY MODAL -->
+    <div id="communityModal" class="fixed inset-0 z-[6000] bg-slate-900/90 backdrop-blur hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-3xl rounded-[2.5rem] p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-2xl font-black">Course Communities</h3>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeCommunityModal()" class="text-slate-500">Close</button>
+                </div>
+            </div>
+
+            <div id="communityListView">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-bold mb-2">Available Communities</h4>
+                        <div id="communityList" class="mb-4"></div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-2">Create Community</h4>
+                        <input id="commTitle" placeholder="Community title" class="w-full p-3 mb-2 bg-slate-50 rounded-xl">
+                        <input id="commCourse" placeholder="Course name (e.g., Math 101)" class="w-full p-3 mb-2 bg-slate-50 rounded-xl">
+                        <input id="commCreator" placeholder="Your name" class="w-full p-3 mb-2 bg-slate-50 rounded-xl">
+                        <textarea id="commDesc" placeholder="Description" class="w-full p-3 mb-2 bg-slate-50 rounded-xl"></textarea>
+                        <div class="flex gap-2">
+                            <button onclick="createCommunity()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl">Create</button>
+                            <button onclick="loadCommunities()" class="bg-slate-100 px-4 py-2 rounded-xl">Refresh</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="communityChatView" class="hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h4 id="communityTitleLabel" class="font-bold">Community</h4>
+                    </div>
+                    <div>
+                        <button onclick="backToList()" class="text-slate-500">Back</button>
+                    </div>
+                </div>
+                <div id="communityMessages" class="h-64 overflow-y-auto p-3 mb-2 bg-slate-50 rounded-xl"></div>
+                <div class="flex gap-2 mb-2">
+                    <input id="commSenderName" placeholder="Your name" class="p-2 bg-white rounded-xl flex-1">
+                    <input id="commMessageInput" placeholder="Write a message" class="p-2 bg-white rounded-xl flex-2">
+                    <button onclick="postMessage()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="fixed inset-0 z-[6000] bg-slate-900/90 backdrop-blur hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-2xl font-black">Settings</h3>
+                <button onclick="closeModal('settingsModal')" class="text-slate-500">Close</button>
+            </div>
+
+            <div class="space-y-4">
+                <h4 class="font-bold">Social Links</h4>
+                <input id="setInstagram" placeholder="Instagram handle or URL" class="w-full p-3 bg-slate-50 rounded-xl">
+                <input id="setFacebook" placeholder="Facebook profile or page URL" class="w-full p-3 bg-slate-50 rounded-xl">
+                <input id="setTwitter" placeholder="Twitter handle or URL" class="w-full p-3 bg-slate-50 rounded-xl">
+                <input id="setLinkedin" placeholder="LinkedIn profile URL" class="w-full p-3 bg-slate-50 rounded-xl">
+
+                <h4 class="font-bold">Notifications</h4>
+                <label class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer">
+                    <input type="checkbox" id="setNotifications" class="w-4 h-4 accent-indigo-600">
+                    <span class="text-sm">Enable notifications</span>
+                </label>
+
+                <h4 class="font-bold">Profile Privacy</h4>
+                <label class="flex items-center gap-3"><input type="radio" name="setProfilePrivacy" value="public" checked> Public</label>
+                <label class="flex items-center gap-3"><input type="radio" name="setProfilePrivacy" value="private"> Private</label>
+
+                <div class="flex gap-2 mt-4">
+                    <button onclick="saveSettings()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl">Save Settings</button>
+                    <button onclick="closeModal('settingsModal')" class="bg-slate-100 px-4 py-2 rounded-xl">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFILE MODAL -->
+    <div id="profileModal" class="fixed inset-0 z-[6000] bg-slate-900/90 backdrop-blur hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-2xl font-black">My Profile</h3>
+                <button onclick="closeModal('profileModal')" class="text-slate-500">Close</button>
+            </div>
+
+            <div class="space-y-4">
+                <h4 class="font-bold">Public Profile Links</h4>
+                <p class="text-sm text-slate-500">These links come from your Settings. You can publish them to your teacher profile so students can find you.</p>
+                <div class="grid grid-cols-1 gap-2">
+                    <div class="text-xs text-slate-600">Instagram: <span id="profileInstagram" class="font-bold"></span></div>
+                    <div class="text-xs text-slate-600">Facebook: <span id="profileFacebook" class="font-bold"></span></div>
+                    <div class="text-xs text-slate-600">Twitter: <span id="profileTwitter" class="font-bold"></span></div>
+                    <div class="text-xs text-slate-600">LinkedIn: <span id="profileLinkedin" class="font-bold"></span></div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold">Publish to Teacher Profile</h4>
+                    <p class="text-sm text-slate-500 mb-2">Enter the email you used when registering as a teacher to attach these links to your listing.</p>
+                    <input id="profileTeacherEmail" placeholder="Teacher email" class="w-full p-3 mb-2 bg-slate-50 rounded-xl">
+                    <div class="flex gap-2">
+                        <button onclick="publishProfileToTeacher()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl">Publish</button>
+                        <button onclick="closeModal('profileModal')" class="bg-slate-100 px-4 py-2 rounded-xl">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Maps API -->
+    <script>
+        function onGoogleMapsReady() {
+            console.log('✅ Google Maps API loaded successfully');
+            if (typeof initializeMap === 'function') {
+                initializeMap();
+                console.log('✅ Map initialized');
+            } else {
+                console.warn('⏳ Waiting for main.js to load...');
+                setTimeout(() => {
+                    if (typeof initializeMap === 'function') {
+                        initializeMap();
+                    }
+                }, 500);
+            }
+        }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCY5vUJxI9wtQpw2XQ4lLm54MnjRpotRTA&libraries=geometry,directions,places&callback=onGoogleMapsReady" async defer onerror="console.error('❌ Google Maps API failed to load. Check your API key.');"></script>
+    
+    <!-- MODULAR JAVASCRIPT FILES -->
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/community.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/tutors.js"></script>
+    <script src="js/notes.js"></script>
+    <script src="js/books.js"></script>
+    <!-- QR decoding library for client-side scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="js/chatbot.js"></script>
+    
+    <script>
+        // INITIALIZATION ON PAGE LOAD
+        window.addEventListener('load', () => {
+            console.log('🚀 Page loaded - initializing content');
+            renderTutors();
+            renderBooks('');
+            updateCallbackQueue();
+            updateStats();
+            
+            // Initialize map after a brief delay to ensure DOM is ready
+            setTimeout(() => {
+                if (typeof initializeMap === 'function') {
+                    console.log('📍 Initializing map...');
+                    initializeMap();
+                } else {
+                    console.warn('⏳ initializeMap not yet available');
+                }
+            }, 100);
+        });
+
+        // FILE UPLOAD HANDLING FOR NOTES
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('uploadArea');
+            const uploadInput = document.getElementById('uploadNoteFile');
+
+            if(uploadArea && uploadInput) {
+                uploadArea.addEventListener('click', () => uploadInput.click());
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('bg-purple-100');
+                });
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('bg-purple-100');
+                });
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('bg-purple-100');
+                    if(e.dataTransfer.files.length > 0) {
+                        uploadInput.files = e.dataTransfer.files;
+                        updateFileName(e.dataTransfer.files[0]);
+                    }
+                });
+
+                uploadInput.addEventListener('change', (e) => {
+                    if(e.target.files.length > 0) {
+                        updateFileName(e.target.files[0]);
+                    }
+                });
+            }
+        });
+
+        function updateFileName(file) {
+            const fileName = document.getElementById('uploadFileName');
+            if(file.size > 10 * 1024 * 1024) {
+                fileName.textContent = '❌ File too large (Max 10MB)';
+                document.getElementById('uploadNoteFile').value = '';
+                return;
+            }
+            fileName.textContent = `✅ ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        }
+    </script>
+</body>
+</html>
